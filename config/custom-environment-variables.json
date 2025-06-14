@@ -1,0 +1,16 @@
+{
+  "env": "NODE_ENV",
+  "port": "PORT",
+  "frontendURL": "FRONTEND_URL",
+  "hostUrl": "HOST_URL",
+  "jwtPrivateKey": "JWT_SECRET",
+  "mongoUri": "MONGO_DB_CONNECT_STRING",
+  "googleClientId": "GOOGLE_CLIENT_ID",
+  "googleClientSecret": "GOOGLE_CLIENT_SECRET",
+  "googleRedirectUri": "GOOGLE_REDIRECT_URI",
+  "jiraClientId": "JIRA_CLIENT_ID",
+  "jiraClientSecret": "JIRA_CLIENT_SECRET",
+  "outlookClientId": "OUTLOOK_CLIENT_ID",
+  "outlookClientSecret": "OUTLOOK_CLIENT_SECRET",
+  "outlookTenantId": "OUTLOOK_TENANT_ID"
+}
