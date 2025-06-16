@@ -102,9 +102,22 @@ export default class GoogleServices {
     }
   }
 
-  static async getGmailMessages(accessToken: string) {
+  static async getGmailMessages(tokens: { access_token: string; refresh_token?: string }) {
     const oAuth2Client: OAuth2Client = googleUtils.auth;
-    oAuth2Client.setCredentials({ access_token: accessToken });
+ 
+    oAuth2Client.setCredentials({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+    });
+
+    if (tokens.refresh_token) {
+      try {
+        await oAuth2Client.getAccessToken(); // 내부적으로 refresh 수행
+      } catch (err) {
+        console.error('Token refresh failed:', err);
+        return { success: false, error: 'Invalid or expired token' };
+      }
+    }
 
     const gmailClient: gmail_v1.Gmail = gmail({ version: 'v1', auth: oAuth2Client });
 

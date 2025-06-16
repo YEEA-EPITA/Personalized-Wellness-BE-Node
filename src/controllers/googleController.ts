@@ -330,15 +330,18 @@ export default class GoogleController {
       }
 
       googleUtils.auth.setCredentials({ 
-        access_token: platform.tokens.access_token
-        // refresh_token: platform.tokens.refresh_token, 
-        // expiry_date: platform.tokens.expiry_date,
+        access_token: platform.tokens.access_token,
+        refresh_token: platform.tokens.refresh_token, 
+        expiry_date: platform.tokens.expiry_date,
       });
 
       const tokenInfo = await googleUtils.auth.getTokenInfo(platform.tokens.access_token);
       console.log('tokenInfo:', tokenInfo);
 
-      const messages = await GoogleServices.getGmailMessages(platform.tokens.access_token);
+      const messages = await GoogleServices.getGmailMessages({
+        access_token: platform.tokens.access_token,
+        refresh_token: platform.tokens.refresh_token,
+      });
 
       res.status(200).json({
         statusCode: 200,

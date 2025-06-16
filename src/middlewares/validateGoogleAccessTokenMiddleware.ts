@@ -84,6 +84,7 @@ const validateGoogleAccessTokenMiddleware = async (
     const tokens = findUserConnection.tokens;
     googleUtils.auth.setCredentials(tokens);
     console.log('Token is valid, proceeding to next');
+    console.log('foundGoogleConnection:', findUserConnection.tokens)
     next();
   } catch (error) {
     console.error('Error in validateGoogleAccessTokenMiddleware:', error);
