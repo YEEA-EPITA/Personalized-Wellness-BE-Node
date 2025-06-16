@@ -5,6 +5,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { googleUtils } from '../utils';
 import base64url from 'base64url';
 import config from 'config';
+import * as cheerio from 'cheerio';
 
 interface findConnectionParams {
   type: string;
@@ -105,8 +106,6 @@ export default class GoogleServices {
     const oAuth2Client: OAuth2Client = googleUtils.auth;
     oAuth2Client.setCredentials({ access_token: accessToken });
 
-    // const gmailClient = gmail({ auth: oAuth2Client });
-    // const gmailClient: gmail_v1.Gmail = gmail({ auth: oAuth2Client });
     const gmailClient: gmail_v1.Gmail = gmail({ version: 'v1', auth: oAuth2Client });
 
     const res = await gmailClient.users.messages.list({
@@ -129,24 +128,30 @@ export default class GoogleServices {
         const headers = detail.data.payload?.headers || [];
         const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
         const from = headers.find(h => h.name === 'From')?.value || '(Unknown Sender)';
+        const date = headers.find(h => h.name === 'Date')?.value || null;
 
-        let bodyData = '';
+        let rawBody = '';
         const payload = detail.data.payload;
 
         if (payload?.parts?.length) {
-          const part = payload.parts.find(p => p.mimeType === 'text/plain' || p.mimeType === 'text/html');
+          const part = payload.parts.find(p => p.mimeType === 'text/html' || p.mimeType === 'text/plain');
           if (part?.body?.data) {
-            bodyData = base64url.decode(part.body.data);
+            rawBody = base64url.decode(part.body.data);
           }
         } else if (payload?.body?.data) {
-          bodyData = base64url.decode(payload.body.data);
+          rawBody = base64url.decode(payload.body.data);
         }
+
+        // HTML → Text 
+        const $ = cheerio.load(rawBody);
+        const cleanText = $.text().replace(/\s+/g, ' ').trim();
 
         return {
           id: msg.id,
-          subject,
           from,
-          body: bodyData,
+          subject,
+          receivedDateTime: date,
+          message: cleanText,
         };
       })
     );
