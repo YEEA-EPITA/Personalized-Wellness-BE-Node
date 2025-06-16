@@ -80,9 +80,13 @@ const validateGoogleAccessTokenMiddleware = async (
           customMessage: 'Token is expired please reauthorized it',
         })
       );
-
+    
+    const tokens = findUserConnection.tokens;
+    googleUtils.auth.setCredentials(tokens);
+    console.log('Token is valid, proceeding to next');
     next();
   } catch (error) {
+    console.error('Error in validateGoogleAccessTokenMiddleware:', error);
     next(error);
   }
 };
