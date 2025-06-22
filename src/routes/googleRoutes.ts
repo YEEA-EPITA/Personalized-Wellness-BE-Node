@@ -53,7 +53,7 @@ router.delete(
 router.get(
   '/gmail/messages',
   authMiddleware,
-  // validateGoogleAccessTokenMiddleware,
+  validateGoogleAccessTokenMiddleware,
   catchAsync(GoogleController.getGmailMessages)
 );
 

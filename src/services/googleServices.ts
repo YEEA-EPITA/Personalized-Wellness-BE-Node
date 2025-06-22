@@ -4,7 +4,6 @@ import { gmail_v1, gmail } from '@googleapis/gmail';
 import { OAuth2Client } from 'google-auth-library';
 import { googleUtils } from '../utils';
 import base64url from 'base64url';
-import config from 'config';
 import * as cheerio from 'cheerio';
 
 interface findConnectionParams {
@@ -110,15 +109,6 @@ export default class GoogleServices {
       refresh_token: tokens.refresh_token,
     });
 
-    if (tokens.refresh_token) {
-      try {
-        await oAuth2Client.getAccessToken(); // 내부적으로 refresh 수행
-      } catch (err) {
-        console.error('Token refresh failed:', err);
-        return { success: false, error: 'Invalid or expired token' };
-      }
-    }
-
     const gmailClient: gmail_v1.Gmail = gmail({ version: 'v1', auth: oAuth2Client });
 
     const res = await gmailClient.users.messages.list({
@@ -147,7 +137,9 @@ export default class GoogleServices {
         const payload = detail.data.payload;
 
         if (payload?.parts?.length) {
-          const part = payload.parts.find(p => p.mimeType === 'text/html' || p.mimeType === 'text/plain');
+          const part = payload.parts.find(
+          (p) => ['text/html', 'text/plain'].includes(p.mimeType || '')
+        );
           if (part?.body?.data) {
             rawBody = base64url.decode(part.body.data);
           }
@@ -171,4 +163,20 @@ export default class GoogleServices {
 
     return messages.filter(Boolean);
   }
+
+  static async findConnectionByConnectorId({
+    type,
+    connectorId,
+  }: {
+    type: string;
+    connectorId: string;
+  }) {
+    try {
+      const connection = await PlatformsModel.findOne({ type, connectorId });
+      return { success: true, data: connection };
+    } catch (error) {
+      return { success: false, error };
+    }
+  }
+
 }

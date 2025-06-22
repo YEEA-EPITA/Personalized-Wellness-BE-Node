@@ -5,10 +5,7 @@ import config from 'config';
 import { googleUtils } from '../utils';
 import { people as googlePeopleApi } from '@googleapis/people';
 import { calendar as googleCalanderApi } from '@googleapis/calendar';
-import { google } from 'googleapis';
 import crypto from 'crypto';
-import { PlatformsModel } from '../models';
-import mongoose from 'mongoose';
 
 export default class GoogleController {
   static async generateAuthUrl(
@@ -315,32 +312,20 @@ export default class GoogleController {
       console.log('Gmail request confirmed');
 
       const userId = req.jwtToken?.id;
-      console.log('userId:', userId);
-
-      const objectId = new mongoose.Types.ObjectId(userId);
-      const platform = await PlatformsModel.findOne({
+      const platformResult = await GoogleServices.findConnectionByConnectorId({
         type: 'GOOGLE',
-        connectorId: objectId,
+        connectorId: userId,
       });
 
-      console.log('platform:', platform);
-
-      if (!platform || !platform.tokens?.access_token) {
+      if (!platformResult.success || !platformResult.data?.tokens?.access_token) {
         throw new Error('No Google account connected or missing access token');
       }
 
-      googleUtils.auth.setCredentials({ 
-        access_token: platform.tokens.access_token,
-        refresh_token: platform.tokens.refresh_token, 
-        expiry_date: platform.tokens.expiry_date,
-      });
-
-      const tokenInfo = await googleUtils.auth.getTokenInfo(platform.tokens.access_token);
-      console.log('tokenInfo:', tokenInfo);
+      const tokens = platformResult.data.tokens;
 
       const messages = await GoogleServices.getGmailMessages({
-        access_token: platform.tokens.access_token,
-        refresh_token: platform.tokens.refresh_token,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
       });
 
       res.status(200).json({
@@ -350,7 +335,6 @@ export default class GoogleController {
       });
     } catch (error) {
       console.error('Error in getGmailMessages:', error);
-      console.error('Token is invalid, may need to refresh:', error);
       next(error);
     }
   }
