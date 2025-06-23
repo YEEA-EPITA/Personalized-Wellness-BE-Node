@@ -80,7 +80,6 @@ const validateGoogleAccessTokenMiddleware = async (
           customMessage: 'Token is expired please reauthorized it',
         })
       );
-
     next();
   } catch (error) {
     next(error);

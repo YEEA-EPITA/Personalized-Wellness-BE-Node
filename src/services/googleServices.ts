@@ -1,4 +1,7 @@
 import { PlatformsModel } from '../models';
+import { gmail_v1, gmail } from '@googleapis/gmail';
+import base64url from 'base64url';
+import * as cheerio from 'cheerio';
 
 interface findConnectionParams {
   type: string;
@@ -92,6 +95,86 @@ export default class GoogleServices {
       return { success: true, data: findEvent };
     } catch (err) {
       return { success: false, error: err };
+    }
+  }
+
+  static async getGmailMessages({ auth }: any): Promise<any> {
+    try {
+      const gmailClient: gmail_v1.Gmail = gmail({
+        version: 'v1',
+        auth,
+      });
+
+      const res = await gmailClient.users.messages.list({
+        userId: 'me',
+        maxResults: 5,
+      });
+
+      const messageIds = res.data.messages || [];
+
+      const messages = await Promise.all(
+        messageIds.map(async msg => {
+          if (!msg.id) return null;
+
+          const detail = await gmailClient.users.messages.get({
+            userId: 'me',
+            id: msg.id,
+            format: 'full',
+          });
+
+          const headers = detail.data.payload?.headers || [];
+          const subject =
+            headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
+          const from =
+            headers.find(h => h.name === 'From')?.value || '(Unknown Sender)';
+          const date = headers.find(h => h.name === 'Date')?.value || null;
+
+          let rawBody = '';
+          const payload = detail.data.payload;
+
+          if (payload?.parts?.length) {
+            const part = payload.parts.find(p =>
+              ['text/html', 'text/plain'].includes(p.mimeType || '')
+            );
+            if (part?.body?.data) {
+              rawBody = base64url.decode(part.body.data);
+            }
+          } else if (payload?.body?.data) {
+            rawBody = base64url.decode(payload.body.data);
+          }
+
+          // HTML → Text
+          const $ = cheerio.load(rawBody);
+          const cleanText = $.text().replace(/\s+/g, ' ').trim();
+
+          return {
+            id: msg.id,
+            from,
+            subject,
+            receivedDateTime: date,
+            message: cleanText,
+          };
+        })
+      );
+
+      return { success: true, data: messages };
+    } catch (error) {
+      return { success: false, error };
+    }
+  }
+
+  static async findConnectionByConnectorId({
+    type,
+    connectorId,
+  }: {
+    type: string;
+    connectorId: string;
+  }) {
+    try {
+      const connection = await PlatformsModel.findOne({ type, connectorId });
+      return { success: true, data: connection };
+    } catch (error) {
+      return { success: false, error };
     }
   }
 }

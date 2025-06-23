@@ -20,6 +20,7 @@ export default class GoogleController {
       const url = auth.generateAuthUrl({
         access_type: 'offline',
         scope: scopes,
+        prompt: 'consent',
       });
 
       return next(
@@ -295,6 +296,33 @@ export default class GoogleController {
           data: {},
           message: 'Google calendar event deleted successfully',
           statusCode: 200,
+        })
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getGmailMessages(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { auth } = googleUtils;
+
+      const { success, data, error } = await GoogleServices.getGmailMessages({
+        auth,
+      });
+
+      if (!success) throw error;
+
+      next(
+        GeneralResponsesFactory.successResponse({
+          data,
+          statusCode: 200,
+          message: 'Gmail messages retrieved successfully',
+          key: 'messages',
         })
       );
     } catch (error) {

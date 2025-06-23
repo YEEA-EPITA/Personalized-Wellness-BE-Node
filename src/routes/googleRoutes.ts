@@ -50,4 +50,11 @@ router.delete(
   catchAsync(GoogleController.deleteGoogleCalendarEvent)
 );
 
+router.get(
+  '/gmail/messages',
+  authMiddleware,
+  validateGoogleAccessTokenMiddleware,
+  catchAsync(GoogleController.getGmailMessages)
+);
+
 export default router;
