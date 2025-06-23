@@ -20,7 +20,7 @@ export default class GoogleController {
       const url = auth.generateAuthUrl({
         access_type: 'offline',
         scope: scopes,
-        prompt: 'consent',            
+        prompt: 'consent',
       });
 
       return next(
@@ -309,32 +309,23 @@ export default class GoogleController {
     next: NextFunction
   ): Promise<void> {
     try {
-      console.log('Gmail request confirmed');
+      const { auth } = googleUtils;
 
-      const userId = req.jwtToken?.id;
-      const platformResult = await GoogleServices.findConnectionByConnectorId({
-        type: 'GOOGLE',
-        connectorId: userId,
+      const { success, data, error } = await GoogleServices.getGmailMessages({
+        auth,
       });
 
-      if (!platformResult.success || !platformResult.data?.tokens?.access_token) {
-        throw new Error('No Google account connected or missing access token');
-      }
+      if (!success) throw error;
 
-      const tokens = platformResult.data.tokens;
-
-      const messages = await GoogleServices.getGmailMessages({
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-      });
-
-      res.status(200).json({
-        statusCode: 200,
-        message: 'Gmail messages retrieved successfully',
-        data: messages,
-      });
+      next(
+        GeneralResponsesFactory.successResponse({
+          data,
+          statusCode: 200,
+          message: 'Gmail messages retrieved successfully',
+          key: 'messages',
+        })
+      );
     } catch (error) {
-      console.error('Error in getGmailMessages:', error);
       next(error);
     }
   }

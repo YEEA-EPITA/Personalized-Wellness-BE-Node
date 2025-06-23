@@ -1,8 +1,5 @@
 import { PlatformsModel } from '../models';
-import { google } from 'googleapis';
 import { gmail_v1, gmail } from '@googleapis/gmail';
-import { OAuth2Client } from 'google-auth-library';
-import { googleUtils } from '../utils';
 import base64url from 'base64url';
 import * as cheerio from 'cheerio';
 
@@ -101,67 +98,69 @@ export default class GoogleServices {
     }
   }
 
-  static async getGmailMessages(tokens: { access_token: string; refresh_token?: string }) {
-    const oAuth2Client: OAuth2Client = googleUtils.auth;
- 
-    oAuth2Client.setCredentials({
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-    });
+  static async getGmailMessages({ auth }: any): Promise<any> {
+    try {
+      const gmailClient: gmail_v1.Gmail = gmail({
+        version: 'v1',
+        auth,
+      });
 
-    const gmailClient: gmail_v1.Gmail = gmail({ version: 'v1', auth: oAuth2Client });
+      const res = await gmailClient.users.messages.list({
+        userId: 'me',
+        maxResults: 5,
+      });
 
-    const res = await gmailClient.users.messages.list({
-      userId: 'me',
-      maxResults: 5,
-    });
+      const messageIds = res.data.messages || [];
 
-    const messageIds = res.data.messages || [];
+      const messages = await Promise.all(
+        messageIds.map(async msg => {
+          if (!msg.id) return null;
 
-    const messages = await Promise.all(
-      messageIds.map(async (msg) => {
-        if (!msg.id) return null;
+          const detail = await gmailClient.users.messages.get({
+            userId: 'me',
+            id: msg.id,
+            format: 'full',
+          });
 
-        const detail = await gmailClient.users.messages.get({
-          userId: 'me',
-          id: msg.id,
-          format: 'full',
-        });
+          const headers = detail.data.payload?.headers || [];
+          const subject =
+            headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
+          const from =
+            headers.find(h => h.name === 'From')?.value || '(Unknown Sender)';
+          const date = headers.find(h => h.name === 'Date')?.value || null;
 
-        const headers = detail.data.payload?.headers || [];
-        const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
-        const from = headers.find(h => h.name === 'From')?.value || '(Unknown Sender)';
-        const date = headers.find(h => h.name === 'Date')?.value || null;
+          let rawBody = '';
+          const payload = detail.data.payload;
 
-        let rawBody = '';
-        const payload = detail.data.payload;
-
-        if (payload?.parts?.length) {
-          const part = payload.parts.find(
-          (p) => ['text/html', 'text/plain'].includes(p.mimeType || '')
-        );
-          if (part?.body?.data) {
-            rawBody = base64url.decode(part.body.data);
+          if (payload?.parts?.length) {
+            const part = payload.parts.find(p =>
+              ['text/html', 'text/plain'].includes(p.mimeType || '')
+            );
+            if (part?.body?.data) {
+              rawBody = base64url.decode(part.body.data);
+            }
+          } else if (payload?.body?.data) {
+            rawBody = base64url.decode(payload.body.data);
           }
-        } else if (payload?.body?.data) {
-          rawBody = base64url.decode(payload.body.data);
-        }
 
-        // HTML → Text 
-        const $ = cheerio.load(rawBody);
-        const cleanText = $.text().replace(/\s+/g, ' ').trim();
+          // HTML → Text
+          const $ = cheerio.load(rawBody);
+          const cleanText = $.text().replace(/\s+/g, ' ').trim();
 
-        return {
-          id: msg.id,
-          from,
-          subject,
-          receivedDateTime: date,
-          message: cleanText,
-        };
-      })
-    );
+          return {
+            id: msg.id,
+            from,
+            subject,
+            receivedDateTime: date,
+            message: cleanText,
+          };
+        })
+      );
 
-    return messages.filter(Boolean);
+      return { success: true, data: messages };
+    } catch (error) {
+      return { success: false, error };
+    }
   }
 
   static async findConnectionByConnectorId({
@@ -178,5 +177,4 @@ export default class GoogleServices {
       return { success: false, error };
     }
   }
-
 }

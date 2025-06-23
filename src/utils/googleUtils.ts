@@ -7,10 +7,6 @@ const REDIRECT_URL = `${config.get<string>('hostUrl')}/api/v1/google/auth/callba
 
 const auth = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URL);
 
-export function getOAuthClientInstance(): OAuth2Client {
-  return new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URL);
-}
-
 const scopes = [
   'https://www.googleapis.com/auth/user.emails.read',
   'https://www.googleapis.com/auth/userinfo.profile',
