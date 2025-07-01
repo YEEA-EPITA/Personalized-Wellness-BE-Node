@@ -356,11 +356,7 @@ export default class GoogleController {
         })
       );
     } catch (error) {
-      res.status(500).json({
-        statusCode: 500,
-        message: 'Failed to process emails',
-        error: error instanceof Error ? error.message : String(error),
-      });
+      next(error);
     }
   }
 

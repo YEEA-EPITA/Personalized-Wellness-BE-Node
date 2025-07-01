@@ -1,5 +1,6 @@
 import nlp from 'compromise';
 import nlpDates from 'compromise-dates';
+import * as chrono from 'chrono-node';
 
 nlp.extend(nlpDates);
 
@@ -10,11 +11,15 @@ export interface ParsedEvent {
   summary: string;
 }
 
-export function parseEmailForEvent(message: string): ParsedEvent {
+export function parseEmailForEvent(message: string, referenceDateStr?: string): ParsedEvent {
   const doc: any = nlp(message);
-  const dates = doc.dates().json();
-  const eventDate = dates.length ? dates[0].text : '';
 
+  // Parsing date
+  const referenceDate = referenceDateStr ? new Date(referenceDateStr) : new Date();
+  const parsed = chrono.parse(message, referenceDate);
+  const eventDate = parsed.length ? parsed[0].start?.date().toISOString() : '';
+
+  // Detect eventType # keywords
   let eventType = 'general';
   let keyword = '';
   const lowered = message.toLowerCase();
@@ -43,19 +48,13 @@ export function parseEmailForEvent(message: string): ParsedEvent {
     }
   }
 
-  // Split into sentences
-  const sentences = message.split(/(?<=[.?!])\s+/);
-
-  // Remove greeting sentences (e.g., "Dear won,", "Hello team,", etc.), Add if needed
-  const greetingRegex = /^(dear|hello|hi)[\s,]/i;
+  // Extract summary
+  const sentences = message.split(/(?<=[.?!])\s+/);  
+  const greetingRegex = /^(dear|hello|hi)[\s,]/i;    // Remove greeting sentences, Add if needed
   const filteredSentences = sentences.filter(s => !greetingRegex.test(s.trim()));
-
-  // Try to find sentence with keyword
   const matchedSentence = filteredSentences.find(sentence =>
     keyword && sentence.toLowerCase().includes(keyword)
   );
-
-  // If no keyword match, fallback to first non-greeting sentence
   const summary = (matchedSentence || filteredSentences[0] || '').trim();
 
   return {

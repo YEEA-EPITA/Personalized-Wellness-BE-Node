@@ -13,7 +13,7 @@ export async function processAndSaveEmails(emails: Email[]) {
   const savedEvents = [];
 
   for (const email of emails) {
-    const parsed: ParsedEvent = parseEmailForEvent(email.message);
+    const parsed = parseEmailForEvent(email.message, email.receivedDateTime);
 
     const event = new EventModel({
       emailId: email.id,
