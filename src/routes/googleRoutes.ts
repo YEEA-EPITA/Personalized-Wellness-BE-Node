@@ -64,4 +64,12 @@ router.post(
   catchAsync(GoogleController.processGmailMessages)
 );
 
+router.post(
+  '/gmail/messages/classify',
+  authMiddleware,
+  validateGoogleAccessTokenMiddleware,
+  catchAsync(GoogleController.classifyGmailMessages)
+);
+
+
 export default router;

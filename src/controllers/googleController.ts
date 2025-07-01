@@ -331,6 +331,7 @@ export default class GoogleController {
     }
   }
 
+  // Classify emails when requested
   static async processGmailMessages(
     req: Request,
     res: Response,
@@ -340,22 +341,21 @@ export default class GoogleController {
       const { messages } = req.body;
 
       if (!messages || !Array.isArray(messages)) {
-        res.status(400).json({
-          statusCode: 400,
-          message: 'Invalid email data.',
-        });
-        return;
+        return next(
+          GeneralErrorsFactory.notFoundErr({ customMessage: 'Event not found' })
+        );
       }
 
       const savedEvents = await processAndSaveEmails(messages);
 
-      res.status(200).json({
-        statusCode: 200,
-        message: 'Emails processed and events saved successfully',
-        // events: savedEvents,
-      });
+      next(
+        GeneralResponsesFactory.successResponse({
+          data: undefined,   // Use savedEvents when necessary
+          statusCode: 200,
+          message: 'Gmail classified and saved successfully',
+        })
+      );
     } catch (error) {
-      console.error('Error processing Gmail messages:', error);
       res.status(500).json({
         statusCode: 500,
         message: 'Failed to process emails',
@@ -364,4 +364,40 @@ export default class GoogleController {
     }
   }
 
+  // Classify email automatically while getting email data
+  static async classifyGmailMessages(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { auth } = googleUtils;
+
+      // Gmail Loading
+      const { success, data, error } = await GoogleServices.getGmailMessages({ auth });
+      if (!success) throw error;
+
+      const messages = data?.body?.messages || data?.messages || data || [];
+
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return next(
+          GeneralErrorsFactory.notFoundErr({ customMessage: 'Event not found' })
+        );
+
+      }
+
+      // Email classification and save data
+      const savedEvents = await processAndSaveEmails(messages);
+
+      next(
+        GeneralResponsesFactory.successResponse({
+          data: undefined, // Use savedEvents when necessary
+          statusCode: 200,
+          message: 'Gmail classified and saved successfully',
+        })
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
 }

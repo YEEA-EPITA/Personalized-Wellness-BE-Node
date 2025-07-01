@@ -27,8 +27,8 @@ export async function processAndSaveEmails(emails: Email[]) {
     //   rawMessage: email.message, // To be used if needed
     });
 
-    const saved = await event.save();
-    savedEvents.push(saved);
+   const saved = await event.save();
+   savedEvents.push(saved);
   }
 
   return savedEvents;
