@@ -3,18 +3,20 @@ import nlpDates from 'compromise-dates';
 
 nlp.extend(nlpDates);
 
-interface ParsedEvent {
-  date?: string;
+export interface ParsedEvent {
+  eventDate?: string;
   eventType: string;
+  keyword: string;
   summary: string;
 }
 
 export function parseEmailForEvent(message: string): ParsedEvent {
   const doc: any = nlp(message);
   const dates = doc.dates().json();
-  const date = dates.length ? dates[0].text : '';
+  const eventDate = dates.length ? dates[0].text : '';
 
   let eventType = 'general';
+  let keyword = '';
   const lowered = message.toLowerCase();
 
   const keywords = {
@@ -27,25 +29,37 @@ export function parseEmailForEvent(message: string): ParsedEvent {
     settings: ['settings', 'preferences', 'configuration'],
   };
 
-  const hasKeyword = (words: string[]) => words.some(word => lowered.includes(word));
+  const hasKeyword = (words: string[]): string | undefined =>
+    words.find(word => lowered.includes(word));
 
-  if (hasKeyword(keywords.security)) {
-    eventType = 'security';
-  } else if (hasKeyword(keywords.schedule) || (date && hasKeyword(keywords.confirmation))) {
-    eventType = 'schedule';
-  } else if (hasKeyword(keywords.project)) {
-    eventType = 'project';
-  } else if (hasKeyword(keywords.update)) {
-    eventType = 'update';
-  } else if (hasKeyword(keywords.critical)) {
-    eventType = 'critical';
-  } else if (hasKeyword(keywords.settings)) {
-    eventType = 'settings';
+  for (const [type, wordList] of Object.entries(keywords)) {
+    const matched = hasKeyword(wordList);
+    if (matched) {
+      eventType = type;
+      keyword = matched;
+      break;
+    }
   }
 
+  // Split into sentences
+  const sentences = message.split(/(?<=[.?!])\s+/);
+
+  // Remove greeting sentences (e.g., "Dear won,", "Hello team,", etc.), Add if needed
+  const greetingRegex = /^(dear|hello|hi)[\s,]/i;
+  const filteredSentences = sentences.filter(s => !greetingRegex.test(s.trim()));
+
+  // Try to find sentence with keyword
+  const matchedSentence = filteredSentences.find(sentence =>
+    keyword && sentence.toLowerCase().includes(keyword)
+  );
+
+  // If no keyword match, fallback to first non-greeting sentence
+  const summary = (matchedSentence || filteredSentences[0] || '').trim();
+
   return {
-    date,
+    eventDate,
     eventType,
-    summary: message.slice(0, 200) + '...',
+    keyword,
+    summary,
   };
 }

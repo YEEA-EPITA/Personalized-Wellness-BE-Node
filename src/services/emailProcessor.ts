@@ -1,5 +1,5 @@
 import EventModel from '../models/EventModel';
-import { parseEmailForEvent } from '../utils/emailParser';
+import { parseEmailForEvent, ParsedEvent } from '../utils/emailParser';
 
 interface Email {
   id: string;
@@ -10,29 +10,26 @@ interface Email {
 }
 
 export async function processAndSaveEmails(emails: Email[]) {
-  try {
-    console.log('Processing emails:', emails);
-    
-    for (const email of emails) {
-      console.log('Parsing:', email.message);
+  const savedEvents = [];
 
-      const parsed = parseEmailForEvent(email.message);
-      console.log('Parsed:', parsed);
+  for (const email of emails) {
+    const parsed: ParsedEvent = parseEmailForEvent(email.message);
 
-      const event = new EventModel({
-        emailId: email.id,
-        from: email.from,
-        subject: email.subject,
-        date: email.receivedDateTime,
-        eventType: parsed.eventType,
-        summary: parsed.summary,
-        rawMessage: email.message,
-      });
+    const event = new EventModel({
+      emailId: email.id,
+      from: email.from,
+      subject: email.subject,
+      receivedDate: email.receivedDateTime,
+      eventDate: parsed.eventDate || '',
+      eventType: parsed.eventType,
+      keyword: parsed.keyword,
+      summary: parsed.summary,
+    //   rawMessage: email.message, // To be used if needed
+    });
 
-      await event.save();
-    }
-
-  } catch (error) {
-    throw error;
+    const saved = await event.save();
+    savedEvents.push(saved);
   }
+
+  return savedEvents;
 }

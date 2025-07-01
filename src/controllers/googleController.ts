@@ -331,16 +331,37 @@ export default class GoogleController {
     }
   }
 
-   static async processGmailMessages(req: Request, res: Response) {
-    const { messages } = req.body;
-    if (!messages || !Array.isArray(messages)) {
-      res.status(400).json({ message: 'Invalid email data.' });
-      return;
+  static async processGmailMessages(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { messages } = req.body;
+
+      if (!messages || !Array.isArray(messages)) {
+        res.status(400).json({
+          statusCode: 400,
+          message: 'Invalid email data.',
+        });
+        return;
+      }
+
+      const savedEvents = await processAndSaveEmails(messages);
+
+      res.status(200).json({
+        statusCode: 200,
+        message: 'Emails processed and events saved successfully',
+        // events: savedEvents,
+      });
+    } catch (error) {
+      console.error('Error processing Gmail messages:', error);
+      res.status(500).json({
+        statusCode: 500,
+        message: 'Failed to process emails',
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
-
-    await processAndSaveEmails(messages);
-    res.status(200).json({ message: 'Emails processed and events saved successfully.' });
   }
+
 }
-
-

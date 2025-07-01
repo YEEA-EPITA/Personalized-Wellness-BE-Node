@@ -29,6 +29,4 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use(errorMiddleware);
 app.use(finalResponseMiddleware);
 
-app.use('/api/google', googleRoutes);
-
 export default app;
