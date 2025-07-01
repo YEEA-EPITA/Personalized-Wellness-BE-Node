@@ -27,6 +27,8 @@ export function parseEmailForEvent(message: string): ParsedEvent {
     update: ['update', 'change', 'revision', 'modified', 'review'],
     security: ['security', 'password', 'restore', 'recovery'],
     settings: ['settings', 'preferences', 'configuration'],
+    study: ['assignment', 'class', 'lecture', 'exam', 'test', 'quiz', 'homework', 'course', 'syllabus', 'holiday', 'school'],
+    holiday: ['holiday', 'vacation', 'break', 'leave', 'time off'],
   };
 
   const hasKeyword = (words: string[]): string | undefined =>
