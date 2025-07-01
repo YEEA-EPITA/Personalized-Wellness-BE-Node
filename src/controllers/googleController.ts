@@ -360,40 +360,43 @@ export default class GoogleController {
     }
   }
 
-  // Classify email automatically while getting email data
+  // Classify emails automatically while getting them 
   static async classifyGmailMessages(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const { auth } = googleUtils;
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { auth } = googleUtils;
+    const pageToken = req.query.pageToken as string | undefined;
 
-      // Gmail Loading
-      const { success, data, error } = await GoogleServices.getGmailMessages({ auth });
-      if (!success) throw error;
+    const { success, data, error } = await GoogleServices.getGmailMessages({
+      auth,
+      pageToken,
+    });
+    if (!success) throw error;
 
-      const messages = data?.body?.messages || data?.messages || data || [];
+    const messages = data?.messages || [];
 
-      if (!Array.isArray(messages) || messages.length === 0) {
-        return next(
-          GeneralErrorsFactory.notFoundErr({ customMessage: 'Event not found' })
-        );
-
-      }
-
-      // Email classification and save data
-      const savedEvents = await processAndSaveEmails(messages);
-
-      next(
-        GeneralResponsesFactory.successResponse({
-          data: undefined, // Use savedEvents when necessary
-          statusCode: 200,
-          message: 'Gmail classified and saved successfully',
-        })
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return next(
+        GeneralErrorsFactory.notFoundErr({ customMessage: 'Event not found' })
       );
-    } catch (error) {
-      next(error);
     }
+
+    const savedEvents = await processAndSaveEmails(messages);
+
+    next(
+      GeneralResponsesFactory.successResponse({
+        data: {
+          nextPageToken: data.nextPageToken || null,
+        },
+        statusCode: 200,
+        message: 'Gmail classified and saved successfully',
+      })
+    );
+  } catch (error) {
+    next(error);
   }
+}
 }

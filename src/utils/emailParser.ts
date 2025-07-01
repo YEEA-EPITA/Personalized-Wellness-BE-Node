@@ -19,7 +19,7 @@ export function parseEmailForEvent(message: string, referenceDateStr?: string): 
   const parsed = chrono.parse(message, referenceDate);
   const eventDate = parsed.length ? parsed[0].start?.date().toISOString() : '';
 
-  // Detect eventType # keywords
+  // Detect eventType & keywords
   let eventType = 'general';
   let keyword = '';
   const lowered = message.toLowerCase();
