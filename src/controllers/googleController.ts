@@ -6,6 +6,7 @@ import { googleUtils } from '../utils';
 import { people as googlePeopleApi } from '@googleapis/people';
 import { calendar as googleCalanderApi } from '@googleapis/calendar';
 import crypto from 'crypto';
+import { processAndSaveEmails } from '../services/emailProcessor';
 
 export default class GoogleController {
   static async generateAuthUrl(
@@ -329,4 +330,17 @@ export default class GoogleController {
       next(error);
     }
   }
+
+   static async processGmailMessages(req: Request, res: Response) {
+    const { messages } = req.body;
+    if (!messages || !Array.isArray(messages)) {
+      res.status(400).json({ message: 'Invalid email data.' });
+      return;
+    }
+
+    await processAndSaveEmails(messages);
+    res.status(200).json({ message: 'Emails processed and events saved successfully.' });
+  }
 }
+
+

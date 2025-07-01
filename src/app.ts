@@ -6,6 +6,7 @@ import { corsOrigin } from './utils';
 
 import * as v1 from './apiVersions/v1';
 import { finalResponseMiddleware, errorMiddleware } from './middlewares';
+import googleRoutes from './routes/googleRoutes';
 
 const app = express();
 
@@ -27,5 +28,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 app.use(errorMiddleware);
 app.use(finalResponseMiddleware);
+
+app.use('/api/google', googleRoutes);
 
 export default app;

@@ -57,4 +57,11 @@ router.get(
   catchAsync(GoogleController.getGmailMessages)
 );
 
+router.post(
+  '/gmail/messages/process',
+  authMiddleware,
+  validateGoogleAccessTokenMiddleware,
+  catchAsync(GoogleController.processGmailMessages)
+);
+
 export default router;
