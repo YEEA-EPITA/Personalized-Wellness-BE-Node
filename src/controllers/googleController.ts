@@ -6,7 +6,7 @@ import { googleUtils } from '../utils';
 import { people as googlePeopleApi } from '@googleapis/people';
 import { calendar as googleCalanderApi } from '@googleapis/calendar';
 import crypto from 'crypto';
-import { processAndSaveEmails } from '../services/emailProcessor';
+import { EmailProcessor} from '../services';
 
 export default class GoogleController {
   static async generateAuthUrl(
@@ -346,7 +346,7 @@ export default class GoogleController {
         );
       }
 
-      const savedEvents = await processAndSaveEmails(messages);
+      const savedEvents = await EmailProcessor.processAndSaveEmails(messages);
 
       next(
         GeneralResponsesFactory.successResponse({
@@ -384,7 +384,7 @@ export default class GoogleController {
       );
     }
 
-    const savedEvents = await processAndSaveEmails(messages);
+    const savedEvents = await EmailProcessor.processAndSaveEmails(messages);
 
     next(
       GeneralResponsesFactory.successResponse({

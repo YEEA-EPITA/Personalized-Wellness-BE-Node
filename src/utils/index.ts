@@ -5,6 +5,7 @@ import googleUtils from './googleUtils';
 import jiraUtils from './jiraUtils';
 import jwtUtils from './jwtUtils';
 import outlookUtils from './outlookUtils';
+import { EmailParser } from './emailParser';
 
 export {
   corsOrigin,
@@ -16,4 +17,5 @@ export {
   jiraUtils,
   jwtUtils,
   outlookUtils,
+  EmailParser,
 };

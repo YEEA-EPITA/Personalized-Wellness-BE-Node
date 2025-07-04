@@ -1,4 +1,4 @@
-import { Schema, Document, model } from 'mongoose';
+import { Schema, model, Document } from 'mongoose';
 
 export interface IEvent extends Document {
   emailId: string;
@@ -9,7 +9,6 @@ export interface IEvent extends Document {
   eventDate: string;
   receivedDate: string;
   summary: string;
-  // rawMessage?: string;  // To be used if needed
 }
 
 const eventSchema = new Schema<IEvent>(
@@ -22,7 +21,6 @@ const eventSchema = new Schema<IEvent>(
     eventDate: { type: String, default: '' },      
     receivedDate: { type: String, default: '' },        
     summary: { type: String, default: '' },
-    // rawMessage: { type: String, default: '' },      // To be used if needed
   },
   {
     timestamps: true,
