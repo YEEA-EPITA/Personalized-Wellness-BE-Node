@@ -57,4 +57,16 @@ router.get(
   catchAsync(GoogleController.getGmailMessages)
 );
 
+router.get(
+  '/accounts',
+  authMiddleware,
+  catchAsync(GoogleController.getConnectedPlatforms)
+);
+
+router.delete(
+  '/:id',
+  authMiddleware,
+  catchAsync(GoogleController.deleteConnectedAccount)
+);
+
 export default router;

@@ -89,19 +89,20 @@ export default class OutlookController {
       // Retrievew token from db
       const getOutlookTokenRes = await OutlookServices.getOutlookToken({
         connectorId: userId,
+        email: mySelf.mail,
       });
+
       if (!getOutlookTokenRes.success) throw getOutlookTokenRes.err;
 
       // Update token
       if (getOutlookTokenRes.data) {
         const outlookUpdateTokenRes = await OutlookServices.updateOutlookToken({
-          connectorId: userId,
           data: dataForDB,
         });
         if (!outlookUpdateTokenRes.success) throw outlookUpdateTokenRes.err;
       } else {
         // Save token
-        const outlookUpdateTokenRes = await JiraServices.saveJiraToken({
+        const outlookUpdateTokenRes = await OutlookServices.saveOutlookToken({
           data: dataForDB,
         });
         if (!outlookUpdateTokenRes.success) throw outlookUpdateTokenRes.err;

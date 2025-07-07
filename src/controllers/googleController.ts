@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { GoogleServices } from '../services';
-import { GeneralErrorsFactory, GeneralResponsesFactory } from '../factories';
+import {
+  GeneralEntityFactory,
+  GeneralErrorsFactory,
+  GeneralResponsesFactory,
+} from '../factories';
 import config from 'config';
 import { googleUtils } from '../utils';
 import { people as googlePeopleApi } from '@googleapis/people';
@@ -48,7 +52,7 @@ export default class GoogleController {
 
       if (!code)
         return res.redirect(
-          `${config.get<string>('hostUrl')}/api/v1/auth/google`
+          `${config.get<string>('frontendURL')}/dashboard/accounts?success=false`
         );
 
       const tokens = await auth.getToken(code as string);
@@ -94,13 +98,8 @@ export default class GoogleController {
         }
       }
 
-      return next(
-        GeneralResponsesFactory.successResponse({
-          data: peopleResponse.data,
-          key: 'googleTokens',
-          message: 'Google authentication successful',
-          statusCode: 200,
-        })
+      return res.redirect(
+        `${config.get<string>('frontendURL')}/dashboard/accounts?success=true`
       );
     } catch (error) {
       next(error);
@@ -323,6 +322,82 @@ export default class GoogleController {
           statusCode: 200,
           message: 'Gmail messages retrieved successfully',
           key: 'messages',
+        })
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getConnectedPlatforms(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const user = req.jwtToken;
+
+      const { success, data, err } = await GoogleServices.getAccounts({
+        userId: user.id,
+      });
+
+      if (!success) throw err;
+
+      const cleanedData = GeneralEntityFactory.cleanMongooseData({
+        data,
+        extraFieldsToOmit: ['tokens', 'platformToken', '_class'],
+      });
+
+      next(
+        GeneralResponsesFactory.successResponse({
+          data: cleanedData,
+          statusCode: 200,
+          message: 'Accounts list retrived successfully',
+          key: 'accounts',
+        })
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteConnectedAccount(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const user = req.jwtToken;
+      const id = req.params.id;
+
+      const { success, data, err } = await GoogleServices.findAccount({
+        userId: user.id,
+        accountId: id,
+      });
+
+      if (!data)
+        next(
+          GeneralErrorsFactory.notFoundErr({
+            customMessage: 'No Account Found For Deletion',
+          })
+        );
+
+      if (!success) throw err;
+
+      const { success: deleteAccountSuccess, err: deleteAccountErr } =
+        await GoogleServices.deleteConnectedAccount({
+          userId: user.id,
+          accountId: id,
+        });
+
+      if (!deleteAccountSuccess) throw deleteAccountErr;
+
+      next(
+        GeneralResponsesFactory.successResponse({
+          data: {},
+          statusCode: 200,
+          message: 'Account deleted successfully',
+          key: 'account',
         })
       );
     } catch (error) {
