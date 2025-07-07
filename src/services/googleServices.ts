@@ -177,4 +177,40 @@ export default class GoogleServices {
       return { success: false, error };
     }
   }
+
+  static async getAccounts({ userId }: any): Promise<any> {
+    try {
+      const findConnection = await PlatformsModel.find({ connectorId: userId });
+      return { success: true, data: findConnection };
+    } catch (err) {
+      return { success: false, err };
+    }
+  }
+
+  static async findAccount({ userId, accountId }: any): Promise<any> {
+    try {
+      const account = await PlatformsModel.findOne({
+        _id: accountId,
+        connectorId: userId,
+      });
+      return { success: true, data: account };
+    } catch (err) {
+      return { success: false, err };
+    }
+  }
+
+  static async deleteConnectedAccount({
+    userId,
+    accountId,
+  }: any): Promise<any> {
+    try {
+      const account = await PlatformsModel.deleteOne({
+        _id: accountId,
+        connectorId: userId,
+      });
+      return { success: true, data: account };
+    } catch (err) {
+      return { success: false, err };
+    }
+  }
 }

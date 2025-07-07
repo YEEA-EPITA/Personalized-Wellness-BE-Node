@@ -13,11 +13,12 @@ export default class OutlookServices {
     }
   }
 
-  static async getOutlookToken({ connectorId }: any) {
+  static async getOutlookToken({ connectorId, email }: any) {
     try {
       const platform = await PlatformsModel.findOne({
         connectorId,
         type: platformsConstants.PLATFORMS.outlook.value,
+        email,
       });
       return { success: true, data: platform };
     } catch (err) {
@@ -25,10 +26,10 @@ export default class OutlookServices {
     }
   }
 
-  static async updateOutlookToken({ connectorId, data }: any) {
+  static async updateOutlookToken({ data }: any) {
     try {
       const platform = await PlatformsModel.findOneAndUpdate(
-        { connectorId },
+        { connectorId: data.connectorId },
         data,
         { new: true }
       );
