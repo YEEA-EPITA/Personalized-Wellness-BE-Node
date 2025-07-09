@@ -118,6 +118,8 @@ export default class OutlookController {
   static async getMails(req: Request, res: Response, next: NextFunction) {
     try {
       const token = req.outlookCredentials?.accessToken;
+      const userEmail = req.outlookCredentials?.email;
+
       const limit = parseInt(req.query.limit as string) || 5;
 
       const getMailsRes = await outlookUtils.OutlookAPIs.getMails({
@@ -139,6 +141,7 @@ export default class OutlookController {
         const message = {
           id,
           from,
+          userEmail,
           receivedDateTime,
           subject,
           message: plainText,
