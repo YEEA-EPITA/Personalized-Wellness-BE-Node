@@ -3,6 +3,7 @@ import { EmailParser } from '../utils';
 
 interface Email {
   id: string;
+  to: string;
   from: string;
   subject: string;
   message: string;
@@ -13,11 +14,12 @@ export class EmailProcessor {
     static async processAndSaveEmails(emails: Email[]) {
         const savedEvents = [];
 
-        for (const email of emails) {
+        for (const email of emails) {         
             const parsed = await EmailParser.parseEmailForEvent(email.message, email.receivedDateTime);
 
             const event = new EventModel({
             emailId: email.id,
+            userEmail: email.to,
             from: email.from,
             subject: email.subject,
             receivedDate: email.receivedDateTime,
@@ -32,7 +34,7 @@ export class EmailProcessor {
         }
 
         return savedEvents;
-}
+    }
 }
 
 

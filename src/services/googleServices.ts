@@ -134,6 +134,7 @@ export default class GoogleServices {
           headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
         const from =
           headers.find(h => h.name === 'From')?.value || '(Unknown Sender)';
+        const to = headers.find(h => h.name === 'To')?.value || '(Unknown Recipient)';
         const date = headers.find(h => h.name === 'Date')?.value || null;
 
         let rawBody = '';
@@ -156,6 +157,7 @@ export default class GoogleServices {
         return {
           id: msg.id,
           from,
+          to,
           subject,
           receivedDateTime: date,
           message: cleanText,

@@ -2,6 +2,7 @@ import { Schema, model, Document } from 'mongoose';
 
 export interface IEvent extends Document {
   emailId: string;
+  userEmail: string;
   from: string;
   eventType: string;
   keyword: string;
@@ -14,6 +15,7 @@ export interface IEvent extends Document {
 const eventSchema = new Schema<IEvent>(
   {
     emailId: { type: String, required: true },
+    userEmail: { type: String, required: true },
     from: { type: String, required: true },
     eventType: { type: String, default: '' },
     keyword: { type: String, default: '' },  
