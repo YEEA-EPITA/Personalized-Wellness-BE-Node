@@ -4,7 +4,7 @@ import { EmailProcessor } from '.';
 import { google } from 'googleapis';
 import config from 'config';
 
-const EmailClassifier = cron.schedule('*/3 * * *', async () => {   // every 3h
+const EmailClassifier = cron.schedule('0 */3 * * *', async () => {   // every 3h
   try {
     console.log('[CRON] Gmail classifier started');
 
@@ -19,7 +19,6 @@ const EmailClassifier = cron.schedule('*/3 * * *', async () => {   // every 3h
     
     console.log(`[INFO] Processing user: ${email}`);
 
-    // const oAuth2Client = new google.auth.OAuth2();
     const GOOGLE_CLIENT_ID = config.get<string>('googleClientId');
     const GOOGLE_CLIENT_SECRET = config.get<string>('googleClientSecret')
     const GOOGLE_REDIRECT_URL = `${config.get<string>('hostUrl')}/api/v1/google/auth/callback`;
@@ -52,12 +51,9 @@ const EmailClassifier = cron.schedule('*/3 * * *', async () => {   // every 3h
       console.log(`[INFO] ${mails.length} messages fetched for ${email}`);
 
 
-    const result = await EmailProcessor.processAndSaveEmails(mails); // 옵션 제거
+    const result = await EmailProcessor.processAndSaveEmails(mails);
 
     console.log(`[SUCCESS] ${result.length} events saved for ${email}`);
-
-    // 저장 시 플랫폼 명시가 꼭 필요하면 이 위치에 따로 사용하거나 저장 로직 변경 필요
-    // 예: 이메일에 platform 포함시키기 등
     }
     } catch (err) {
         console.error('[ERROR] Gmail classification job failed:', err);

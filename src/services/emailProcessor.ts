@@ -14,7 +14,15 @@ export class EmailProcessor {
     static async processAndSaveEmails(emails: Email[]) {
         const savedEvents = [];
 
-        for (const email of emails) {         
+        for (const email of emails) {   
+            const existing = await EventModel.findOne({
+                emailId: email.id,
+                userEmail: email.userEmail,
+            });
+            if (existing) {
+                continue;
+            }
+            
             const loweredFrom = email.from.toLowerCase();
             const loweredSubject = email.subject.toLowerCase();
             const loweredMessage = email.message.toLowerCase();
