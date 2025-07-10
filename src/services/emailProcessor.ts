@@ -15,6 +15,26 @@ export class EmailProcessor {
         const savedEvents = [];
 
         for (const email of emails) {         
+            const loweredFrom = email.from.toLowerCase();
+            const loweredSubject = email.subject.toLowerCase();
+            const loweredMessage = email.message.toLowerCase();
+
+            const isCalendarInvite =
+                loweredFrom.includes('calendar-noreply@google.com') ||
+                loweredFrom.includes('calendar.google.com') ||
+                loweredFrom.includes('invite@') ||
+                (loweredSubject.includes('invitation:') && loweredSubject.includes('@')) ||
+                loweredSubject.includes('you have been invited') ||
+                loweredMessage.includes('google calendar') ||
+                loweredMessage.includes('you have been invited')|| 
+                loweredSubject.startsWith('canceled event:') ||
+                loweredSubject.startsWith('updated event:') ||
+                loweredSubject.startsWith('rescheduled:');
+
+            if (isCalendarInvite) {
+                continue;
+            }
+
             const parsed = await EmailParser.parseEmailForEvent(email.message, email.receivedDateTime);
 
             const event = new EventModel({

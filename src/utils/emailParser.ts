@@ -18,6 +18,7 @@ export class EmailParser {
     const referenceDate = referenceDateStr ? new Date(referenceDateStr) : new Date();
     const parsed = chrono.parse(message, referenceDate);
 
+    // EvnentDate(start, end) Extraction
     let eventDateTime = '';
     let endDateTime = '';
 
