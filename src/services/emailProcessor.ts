@@ -3,7 +3,7 @@ import { EmailParser } from '../utils';
 
 interface Email {
   id: string;
-  to: string;
+  userEmail: string;
   from: string;
   subject: string;
   message: string;
@@ -19,7 +19,7 @@ export class EmailProcessor {
 
             const event = new EventModel({
             emailId: email.id,
-            userEmail: email.to,
+            userEmail: email.userEmail,
             from: email.from,
             subject: email.subject,
             receivedDate: email.receivedDateTime,
