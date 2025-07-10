@@ -45,10 +45,12 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "google-auth-library": "^9.15.1",
+    "googleapis": "^152.0.0",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "luxon": "^3.7.1",
     "mongoose": "^8.15.0",
+    "node-cron": "^4.2.1",
     "yup": "^1.6.1"
   }
 }

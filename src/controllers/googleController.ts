@@ -7,6 +7,7 @@ import { people as googlePeopleApi } from '@googleapis/people';
 import { calendar as googleCalanderApi } from '@googleapis/calendar';
 import crypto from 'crypto';
 import { EmailProcessor} from '../services';
+import  { EmailClassifier } from '../services';
 
 export default class GoogleController {
   static async generateAuthUrl(
@@ -362,41 +363,41 @@ export default class GoogleController {
 
   // Classify emails automatically while getting them 
   static async classifyGmailMessages(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const { auth } = googleUtils;
-    const pageToken = req.query.pageToken as string | undefined;
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { auth } = googleUtils;
+      const pageToken = req.query.pageToken as string | undefined;
 
-    const { success, data, error } = await GoogleServices.getGmailMessages({
-      auth,
-      pageToken,
-    });
-    if (!success) throw error;
+      const { success, data, error } = await GoogleServices.getGmailMessages({
+        auth,
+        pageToken,
+      });
+      if (!success) throw error;
 
-    const messages = data?.messages || [];
+      const messages = data?.messages || [];
 
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return next(
-        GeneralErrorsFactory.notFoundErr({ customMessage: 'Event not found' })
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return next(
+          GeneralErrorsFactory.notFoundErr({ customMessage: 'Event not found' })
+        );
+      }
+
+      const savedEvents = await EmailProcessor.processAndSaveEmails(messages);
+
+      next(
+        GeneralResponsesFactory.successResponse({
+          data: {
+            nextPageToken: data.nextPageToken || null,
+          },
+          statusCode: 200,
+          message: 'Gmail classified and saved successfully',
+        })
       );
+    } catch (error) {
+      next(error);
     }
-
-    const savedEvents = await EmailProcessor.processAndSaveEmails(messages);
-
-    next(
-      GeneralResponsesFactory.successResponse({
-        data: {
-          nextPageToken: data.nextPageToken || null,
-        },
-        statusCode: 200,
-        message: 'Gmail classified and saved successfully',
-      })
-    );
-  } catch (error) {
-    next(error);
   }
-}
 }

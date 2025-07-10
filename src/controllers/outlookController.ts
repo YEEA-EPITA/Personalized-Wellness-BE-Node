@@ -5,6 +5,7 @@ import { outlookUtils } from '../utils';
 import { platformsConstants } from '../constants';
 import { jwtUtils } from '../utils';
 import * as cheerio from 'cheerio';
+import { EmailProcessor} from '../services';
 
 export default class OutlookController {
   static async generateAuthUrl(
@@ -160,4 +161,56 @@ export default class OutlookController {
       next(err);
     }
   }
+
+  static async classifyOutlookMessages(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const token = req.outlookCredentials?.accessToken;
+      const userEmail = req.outlookCredentials?.email;
+
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      const getMailsRes = await outlookUtils.OutlookAPIs.getMails({
+        accessToken: token as string,
+        limit,
+      });
+
+      if (!getMailsRes.success) throw getMailsRes.err;
+
+      const mails = getMailsRes.data as any;
+      const messages: any[] = [];
+
+      for (const mail of mails.value) {
+        const { subject, from, body, receivedDateTime, id } = mail;
+
+        const $ = cheerio.load(body.content || '');
+        const plainText = $.text().replace(/\s+/g, ' ').trim();
+
+        messages.push({
+          id,
+          from: from?.emailAddress?.name || '',
+          userEmail,
+          subject,
+          message: plainText,
+          receivedDateTime,
+        });
+      }
+
+      const savedEvents = await EmailProcessor.processAndSaveEmails(messages);
+
+      return next(
+        GeneralResponsesFactory.successResponse({
+          data: savedEvents,
+          message: 'Outlook mails classified and saved successfully',
+          statusCode: 200,
+        })
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+
 }

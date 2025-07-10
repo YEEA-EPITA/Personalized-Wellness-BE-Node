@@ -194,4 +194,13 @@ export default class GoogleServices {
       return { success: false, error };
     }
   }
+
+  static async getAllGmailUsers(): Promise<any> {
+  try {
+    const users = await PlatformsModel.find({ type: 'GOOGLE' });
+    return { success: true, data: users };
+  } catch (error) {
+    return { success: false, error };
+  }
+}
 }
