@@ -22,4 +22,12 @@ router.get(
   catchAsync(OutlookController.getMails)
 );
 
+router.get(
+  '/mails/classify',
+  authMiddleware,
+  validateOutlookAccessTokenMiddleware,
+  catchAsync(OutlookController.classifyOutlookMessages)
+);
+
+
 export default router;
