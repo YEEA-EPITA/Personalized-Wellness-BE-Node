@@ -351,7 +351,7 @@ export default class GoogleController {
 
       next(
         GeneralResponsesFactory.successResponse({
-          data: undefined,   // Use savedEvents when necessary
+          data: undefined,   
           statusCode: 200,
           message: 'Gmail classified and saved successfully',
         })
@@ -400,4 +400,5 @@ export default class GoogleController {
       next(error);
     }
   }
+
 }

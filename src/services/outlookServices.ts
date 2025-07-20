@@ -42,7 +42,7 @@ export default class OutlookServices {
     }
   }
 
-  static async fetchAndParseMails(token: string, userEmail: string, limit: number = 5) {
+  static async fetchAndParseMails(token: string, userEmail: string, limit: number = 30) {
     const getMailsRes = await outlookUtils.OutlookAPIs.getMails({
       accessToken: token,
       limit,
@@ -68,7 +68,7 @@ export default class OutlookServices {
     });
   }
 
-  static async classifyAndSaveMails(token: string, userEmail: string, limit: number = 10) {
+  static async classifyAndSaveMails(token: string, userEmail: string, limit: number = 30) {
     const mails = await this.fetchAndParseMails(token, userEmail, limit);
 
     const formattedMessages = mails.map(mail => ({

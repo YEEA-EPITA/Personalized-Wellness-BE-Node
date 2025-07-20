@@ -71,5 +71,4 @@ router.post(
   catchAsync(GoogleController.classifyGmailMessages)
 );
 
-
 export default router;

@@ -11,4 +11,11 @@ router.get(
   catchAsync(EmailController.getEventsByConnectorId)
 );
 
+router.post(
+  '/events/filter',
+  authMiddleware, 
+  catchAsync(EmailController.getEventsByEmailsAndDate)
+);
+
+
 export default router;

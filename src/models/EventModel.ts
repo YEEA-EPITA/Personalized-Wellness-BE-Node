@@ -7,9 +7,9 @@ export interface IEvent extends Document {
   eventType: string;
   keyword: string;
   subject: string;
-  eventDateTime: string;
-  endDateTime: string;
-  receivedDateTime: string;
+  eventDateTime: Date | null;
+  endDateTime: Date | null;
+  receivedDateTime: Date | null;
   summary: string;
 }
 
@@ -20,10 +20,10 @@ const eventSchema = new Schema<IEvent>(
     from: { type: String, required: true },
     eventType: { type: String, default: '' },
     keyword: { type: String, default: '' },  
-    subject: { type: String, required: true },
-    eventDateTime: { type: String, default: '' }, 
-    endDateTime: { type: String, default: '' },      
-    receivedDateTime: { type: String, default: '' },        
+    subject: { type: String, required: true }, 
+    eventDateTime: { type: Date, default: null },
+    endDateTime: { type: Date, default: null },
+    receivedDateTime: { type: Date, default: null },   
     summary: { type: String, default: '' },
   },
   {

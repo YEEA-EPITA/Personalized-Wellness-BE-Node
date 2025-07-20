@@ -6,7 +6,7 @@ import { google } from 'googleapis';
 import config from 'config';
 import { PlatformsModel } from '../models';
 
-const EmailClassifier = cron.schedule('0 */3 * * *', async () => {   // every 3h
+const EmailClassifier = cron.schedule('*/10 * * * * *', async () => {   // every 3h
   try {
 
     /** ---------------- Gmail ---------------- */

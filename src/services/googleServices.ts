@@ -113,7 +113,7 @@ export default class GoogleServices {
 
     const res = await gmailClient.users.messages.list({
       userId: 'me',
-      maxResults: 5,
+      maxResults: 20,
       pageToken,
     });
 
@@ -196,11 +196,11 @@ export default class GoogleServices {
   }
 
   static async getAllGmailUsers(): Promise<any> {
-  try {
-    const users = await PlatformsModel.find({ type: 'GOOGLE' });
-    return { success: true, data: users };
-  } catch (error) {
-    return { success: false, error };
+    try {
+      const users = await PlatformsModel.find({ type: 'GOOGLE' });
+      return { success: true, data: users };
+    } catch (error) {
+      return { success: false, error };
+    }
   }
-}
 }
