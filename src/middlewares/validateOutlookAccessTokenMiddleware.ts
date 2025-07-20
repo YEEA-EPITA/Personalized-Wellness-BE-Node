@@ -9,6 +9,7 @@ declare global {
     interface Request {
       outlookCredentials?: {
         accessToken: string;
+        email?: string;
       };
     }
   }
@@ -89,7 +90,9 @@ const validateOutlookAccessTokenMiddleware = async (
         })
       );
 
-    req.outlookCredentials = { accessToken: access_token };
+    req.outlookCredentials = { accessToken: access_token,
+      email: findUserConnection.email,
+     };
 
     next();
   } catch (error) {

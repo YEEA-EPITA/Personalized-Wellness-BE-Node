@@ -98,70 +98,87 @@ export default class GoogleServices {
     }
   }
 
-  static async getGmailMessages({ auth }: any): Promise<any> {
-    try {
-      const gmailClient: gmail_v1.Gmail = gmail({
-        version: 'v1',
-        auth,
-      });
+  static async getGmailMessages({
+  auth,
+  pageToken,
+}: {
+  auth: any;
+  pageToken?: string;
+}): Promise<any> {
+  try {
+    const gmailClient: gmail_v1.Gmail = gmail({
+      version: 'v1',
+      auth,
+    });
 
-      const res = await gmailClient.users.messages.list({
-        userId: 'me',
-        maxResults: 5,
-      });
+    const res = await gmailClient.users.messages.list({
+      userId: 'me',
+      maxResults: 20,
+      pageToken,
+    });
 
-      const messageIds = res.data.messages || [];
+    const gmailProfile = await gmailClient.users.getProfile({ userId: 'me' });
+    const userEmail = gmailProfile.data.emailAddress; 
+    const messageIds = res.data.messages || [];
 
-      const messages = await Promise.all(
-        messageIds.map(async msg => {
-          if (!msg.id) return null;
+    const messages = await Promise.all(
+      messageIds.map(async msg => {
+        if (!msg.id) return null;
 
-          const detail = await gmailClient.users.messages.get({
-            userId: 'me',
-            id: msg.id,
-            format: 'full',
-          });
+        const detail = await gmailClient.users.messages.get({
+          userId: 'me',
+          id: msg.id,
+          format: 'full',
+        });
 
-          const headers = detail.data.payload?.headers || [];
-          const subject =
-            headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
-          const from =
-            headers.find(h => h.name === 'From')?.value || '(Unknown Sender)';
-          const date = headers.find(h => h.name === 'Date')?.value || null;
+        const headers = detail.data.payload?.headers || [];
+        const subject =
+          headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
+        const from =
+          headers.find(h => h.name === 'From')?.value || '(Unknown Sender)';
+        const date = headers.find(h => h.name === 'Date')?.value || null;
 
-          let rawBody = '';
-          const payload = detail.data.payload;
+        let rawBody = '';
+        const payload = detail.data.payload;
 
-          if (payload?.parts?.length) {
-            const part = payload.parts.find(p =>
-              ['text/html', 'text/plain'].includes(p.mimeType || '')
-            );
-            if (part?.body?.data) {
-              rawBody = base64url.decode(part.body.data);
-            }
-          } else if (payload?.body?.data) {
-            rawBody = base64url.decode(payload.body.data);
+        if (payload?.parts?.length) {
+          const part = payload.parts.find(p =>
+            ['text/html', 'text/plain'].includes(p.mimeType || '')
+          );
+          if (part?.body?.data) {
+            rawBody = base64url.decode(part.body.data);
           }
+        } else if (payload?.body?.data) {
+          rawBody = base64url.decode(payload.body.data);
+        }
 
-          // HTML → Text
-          const $ = cheerio.load(rawBody);
-          const cleanText = $.text().replace(/\s+/g, ' ').trim();
+        const $ = cheerio.load(rawBody);
+        const cleanText = $.text().replace(/\s+/g, ' ').trim();
 
-          return {
-            id: msg.id,
-            from,
-            subject,
-            receivedDateTime: date,
-            message: cleanText,
-          };
-        })
-      );
+        return {
+          id: msg.id,
+          from,
+          userEmail, 
+          subject,
+          receivedDateTime: date,
+          message: cleanText,
+        };
+      })
+    );
 
-      return { success: true, data: messages };
-    } catch (error) {
-      return { success: false, error };
-    }
+    const filteredMessages = messages.filter(m => m !== null);
+
+    return {
+      success: true,
+      data: {
+        messages: filteredMessages,
+        nextPageToken: res.data.nextPageToken || null,
+      },
+    };
+  } catch (error) {
+    return { success: false, error };
   }
+}
 
   static async findConnectionByConnectorId({
     type,
@@ -178,7 +195,7 @@ export default class GoogleServices {
     }
   }
 
-  static async getAccounts({ userId }: any): Promise<any> {
+ static async getAccounts({ userId }: any): Promise<any> {
     try {
       const findConnection = await PlatformsModel.find({ connectorId: userId });
       return { success: true, data: findConnection };
@@ -211,6 +228,15 @@ export default class GoogleServices {
       return { success: true, data: account };
     } catch (err) {
       return { success: false, err };
+    }
+  }
+  
+    static async getAllGmailUsers(): Promise<any> {
+    try {
+      const users = await PlatformsModel.find({ type: 'GOOGLE' });
+      return { success: true, data: users };
+    } catch (error) {
+      return { success: false, error };
     }
   }
 }

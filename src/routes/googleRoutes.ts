@@ -57,6 +57,19 @@ router.get(
   catchAsync(GoogleController.getGmailMessages)
 );
 
+router.post(
+  '/gmail/messages/process',
+  authMiddleware,
+  validateGoogleAccessTokenMiddleware,
+  catchAsync(GoogleController.processGmailMessages)
+);
+
+router.post(
+  '/gmail/messages/classify',
+  authMiddleware,
+  validateGoogleAccessTokenMiddleware,
+  catchAsync(GoogleController.classifyGmailMessages)
+
 router.get(
   '/accounts',
   authMiddleware,
