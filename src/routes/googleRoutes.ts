@@ -69,6 +69,7 @@ router.post(
   authMiddleware,
   validateGoogleAccessTokenMiddleware,
   catchAsync(GoogleController.classifyGmailMessages)
+  );
 
 router.get(
   '/accounts',
