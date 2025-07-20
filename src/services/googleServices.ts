@@ -195,7 +195,43 @@ export default class GoogleServices {
     }
   }
 
-  static async getAllGmailUsers(): Promise<any> {
+ static async getAccounts({ userId }: any): Promise<any> {
+    try {
+      const findConnection = await PlatformsModel.find({ connectorId: userId });
+      return { success: true, data: findConnection };
+    } catch (err) {
+      return { success: false, err };
+    }
+  }
+
+  static async findAccount({ userId, accountId }: any): Promise<any> {
+    try {
+      const account = await PlatformsModel.findOne({
+        _id: accountId,
+        connectorId: userId,
+      });
+      return { success: true, data: account };
+    } catch (err) {
+      return { success: false, err };
+    }
+  }
+
+  static async deleteConnectedAccount({
+    userId,
+    accountId,
+  }: any): Promise<any> {
+    try {
+      const account = await PlatformsModel.deleteOne({
+        _id: accountId,
+        connectorId: userId,
+      });
+      return { success: true, data: account };
+    } catch (err) {
+      return { success: false, err };
+    }
+  }
+  
+    static async getAllGmailUsers(): Promise<any> {
     try {
       const users = await PlatformsModel.find({ type: 'GOOGLE' });
       return { success: true, data: users };
