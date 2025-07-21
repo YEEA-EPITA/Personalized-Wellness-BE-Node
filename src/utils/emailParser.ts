@@ -33,32 +33,34 @@ export class EmailParser {
         eventDateTime = base.toISO() ?? '';
 
         if (timeMatch) {
-            const rawStart = (timeMatch[2] ?? '').trim();
-            const rawStartAmPm = ((timeMatch[3] || timeMatch[6] || 'AM') ?? 'AM').toUpperCase();
-            const rawEnd = (timeMatch[5] ?? '').trim();
-            const rawEndAmPm = ((timeMatch[6] || timeMatch[3] || 'AM') ?? 'AM').toUpperCase();
+          const rawStart = (timeMatch[2] ?? '').trim();
+          const rawStartAmPm = ((timeMatch[3] || timeMatch[6] || 'AM') ?? 'AM').toUpperCase();
+          const rawEnd = (timeMatch[5] ?? '').trim();
+          const rawEndAmPm = ((timeMatch[6] || timeMatch[3] || 'AM') ?? 'AM').toUpperCase();
 
-            const startTimeStr = `${rawStart} ${rawStartAmPm}`;
-            const endTimeStr = `${rawEnd} ${rawEndAmPm}`;
+          const startTimeStr = `${rawStart} ${rawStartAmPm}`;
+          const endTimeStr = `${rawEnd} ${rawEndAmPm}`;
 
-            const startDT = DateTime.fromFormat(`${baseDateStr} ${startTimeStr}`, 'yyyy-MM-dd h:mm a', {
-                zone: 'Europe/Paris',
-            });
-            const endDT = DateTime.fromFormat(`${baseDateStr} ${endTimeStr}`, 'yyyy-MM-dd h:mm a', {
-                zone: 'Europe/Paris',
-            });
+          const startDT = DateTime.fromFormat(`${baseDateStr} ${startTimeStr}`, 'yyyy-MM-dd h:mm a', {
+            zone: 'Europe/Paris',
+          });
+          const endDT = DateTime.fromFormat(`${baseDateStr} ${endTimeStr}`, 'yyyy-MM-dd h:mm a', {
+            zone: 'Europe/Paris',
+          });
 
-            if (startDT.isValid && endDT.isValid) {
-                eventDateTime = startDT.toISO();
-                endDateTime = endDT.toISO();
+          if (startDT.isValid) {
+            eventDateTime = startDT.toISO();
+            if (endDT.isValid) {
+              endDateTime = endDT.toISO();
             } else {
-                endDateTime = base.plus({ hours: 1 }).toISO()  ?? '';
+              endDateTime = startDT.plus({ minutes: 20 }).toISO();
             }
-            } else {
-            endDateTime = base.plus({ hours: 1 }).toISO()  ?? '';
-            }
+          }
+        } else {
+          endDateTime = base.plus({ minutes: 20 }).toISO() ?? '';
+        }
       }
-    }
+    }  
 
     // Event Type Detection 
     let eventType = 'general';
