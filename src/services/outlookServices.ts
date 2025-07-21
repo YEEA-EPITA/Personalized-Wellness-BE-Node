@@ -1,9 +1,8 @@
 import { PlatformsModel } from '../models';
 import { platformsConstants } from '../constants';
 import * as cheerio from 'cheerio';
-import { EmailProcessor} from '../services';
+import { EmailProcessor } from '../services';
 import { outlookUtils } from '../utils';
-
 
 export default class OutlookServices {
   static async saveOutlookToken({ data }: any) {
@@ -33,7 +32,11 @@ export default class OutlookServices {
   static async updateOutlookToken({ data }: any) {
     try {
       const platform = await PlatformsModel.findOneAndUpdate(
-        { connectorId: data.connectorId },
+        {
+          connectorId: data.connectorId,
+          type: platformsConstants.PLATFORMS.outlook.value,
+          email: data.email,
+        },
         data,
         { new: true }
       );
@@ -43,7 +46,11 @@ export default class OutlookServices {
     }
   }
 
-  static async fetchAndParseMails(token: string, userEmail: string, limit: number = 30) {
+  static async fetchAndParseMails(
+    token: string,
+    userEmail: string,
+    limit: number = 30
+  ) {
     const getMailsRes = await outlookUtils.OutlookAPIs.getMails({
       accessToken: token,
       limit,
@@ -69,15 +76,20 @@ export default class OutlookServices {
     });
   }
 
-  static async classifyAndSaveMails(token: string, userEmail: string, limit: number = 30) {
+  static async classifyAndSaveMails(
+    token: string,
+    userEmail: string,
+    limit: number = 30
+  ) {
     const mails = await this.fetchAndParseMails(token, userEmail, limit);
 
     const formattedMessages = mails.map(mail => ({
       ...mail,
-      from: mail.from || '', 
+      from: mail.from || '',
     }));
 
-    const savedEvents = await EmailProcessor.processAndSaveEmails(formattedMessages);
+    const savedEvents =
+      await EmailProcessor.processAndSaveEmails(formattedMessages);
     return savedEvents;
   }
 
@@ -89,5 +101,4 @@ export default class OutlookServices {
       return { success: false, error };
     }
   }
-    
 }
