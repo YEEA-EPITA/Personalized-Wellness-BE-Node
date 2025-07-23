@@ -1,11 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import { GoogleServices } from '../services';
-import { GeneralErrorsFactory, GeneralResponsesFactory } from '../factories';
+import {
+  GeneralEntityFactory,
+  GeneralErrorsFactory,
+  GeneralResponsesFactory,
+} from '../factories';
 import config from 'config';
 import { googleUtils } from '../utils';
 import { people as googlePeopleApi } from '@googleapis/people';
 import { calendar as googleCalanderApi } from '@googleapis/calendar';
 import crypto from 'crypto';
+import { EmailProcessor} from '../services';
+import  { EmailClassifier } from '../services';
 
 export default class GoogleController {
   static async generateAuthUrl(
@@ -48,7 +54,7 @@ export default class GoogleController {
 
       if (!code)
         return res.redirect(
-          `${config.get<string>('hostUrl')}/api/v1/auth/google`
+          `${config.get<string>('frontendURL')}/dashboard/accounts?success=false`
         );
 
       const tokens = await auth.getToken(code as string);
@@ -94,13 +100,8 @@ export default class GoogleController {
         }
       }
 
-      return next(
-        GeneralResponsesFactory.successResponse({
-          data: peopleResponse.data,
-          key: 'googleTokens',
-          message: 'Google authentication successful',
-          statusCode: 200,
-        })
+      return res.redirect(
+        `${config.get<string>('frontendURL')}/dashboard/accounts?success=true`
       );
     } catch (error) {
       next(error);
@@ -329,4 +330,151 @@ export default class GoogleController {
       next(error);
     }
   }
+
+  static async getConnectedPlatforms(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const user = req.jwtToken;
+
+      const { success, data, err } = await GoogleServices.getAccounts({
+        userId: user.id,
+      });
+
+      if (!success) throw err;
+
+      const cleanedData = GeneralEntityFactory.cleanMongooseData({
+        data,
+        extraFieldsToOmit: ['tokens', 'platformToken', '_class'],
+      });
+
+      next(
+        GeneralResponsesFactory.successResponse({
+          data: cleanedData,
+          statusCode: 200,
+          message: 'Accounts list retrived successfully',
+          key: 'accounts',
+        })
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteConnectedAccount(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const user = req.jwtToken;
+      const id = req.params.id;
+
+      const { success, data, err } = await GoogleServices.findAccount({
+        userId: user.id,
+        accountId: id,
+      });
+
+      if (!data)
+        next(
+          GeneralErrorsFactory.notFoundErr({
+            customMessage: 'No Account Found For Deletion',
+          })
+        );
+
+      if (!success) throw err;
+
+      const { success: deleteAccountSuccess, err: deleteAccountErr } =
+        await GoogleServices.deleteConnectedAccount({
+          userId: user.id,
+          accountId: id,
+        });
+
+      if (!deleteAccountSuccess) throw deleteAccountErr;
+
+      next(
+        GeneralResponsesFactory.successResponse({
+          data: {},
+          statusCode: 200,
+          message: 'Account deleted successfully',
+          key: 'account',
+        })
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+  
+  // Classify emails when requested
+  static async processGmailMessages(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { messages } = req.body;
+
+      if (!messages || !Array.isArray(messages)) {
+        return next(
+          GeneralErrorsFactory.notFoundErr({ customMessage: 'Event not found' })
+        );
+      }
+
+      const savedEvents = await EmailProcessor.processAndSaveEmails(messages);
+
+      next(
+        GeneralResponsesFactory.successResponse({
+          data: undefined,   
+          statusCode: 200,
+          message: 'Gmail classified and saved successfully',
+        })
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Classify emails automatically while getting them 
+  static async classifyGmailMessages(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { auth } = googleUtils;
+      const pageToken = req.query.pageToken as string | undefined;
+
+      const { success, data, error } = await GoogleServices.getGmailMessages({
+        auth,
+        pageToken,
+      });
+      if (!success) throw error;
+
+      const messages = data?.messages || [];
+
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return next(
+          GeneralErrorsFactory.notFoundErr({ customMessage: 'Event not found' })
+        );
+      }
+
+      const savedEvents = await EmailProcessor.processAndSaveEmails(messages);
+
+      next(
+        GeneralResponsesFactory.successResponse({
+          data: {
+            nextPageToken: data.nextPageToken || null,
+          },
+          statusCode: 200,
+          message: 'Gmail classified and saved successfully',
+        })
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
 }
+
